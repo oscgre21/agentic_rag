@@ -243,7 +243,7 @@ try:
         logger.warning("⚠️ El knowledge base estará vacío hasta que se carguen documentos")
     else:
         logger.info(f"Cargando {len(pdf_files)} archivos PDF al knowledge base...")
-        knowledge_base.load(upsert=True)
+        #knowledge_base.load(upsert=True)
         logger.info("✅ Knowledge base cargado exitosamente")
 except ImportError as ie:
     logger.error(f"Dependencia faltante: {ie}")
@@ -649,7 +649,7 @@ def check_ollama_tools_support() -> bool:
         import ollama
         # Check ollama version
         version = getattr(ollama, '__version__', '0.0.0')
-        logger.debug(f"Ollama version detected: {version}")
+        logger.info(f"Checking Ollama version: {version}")
         
         # Parse version - tools support was added in 0.3.x
         try:
@@ -690,13 +690,31 @@ def get_or_create_agent(session_id: str = None, messages: List[Message] = None) 
             ollama_supports_tools = check_ollama_tools_support()
             
             # Crear modelo Ollama con configuración ajustada
-            ollama_model = Ollama(id=MODEL_ID, host=OLLAMA_HOST)
-            
-            # Si no soporta tools, configurar el modelo para no usarlas
+            # IMPORTANTE: Si ollama no soporta tools, usar un modelo sin tools
             if not ollama_supports_tools:
-                # Disable tools in the model to prevent the error
+                logger.warning("Creating Ollama model WITHOUT tools support")
+                # Crear un modelo que no intente usar tools
+                from phi.model.ollama import Ollama as OllamaBase
+                
+                # Parchear el modelo para no usar tools
+                class OllamaNoTools(OllamaBase):
+                    def invoke(self, messages, **kwargs):
+                        # Remover el argumento tools si existe
+                        kwargs.pop('tools', None)
+                        kwargs.pop('tool_choice', None)
+                        return super().invoke(messages, **kwargs)
+                    
+                    def response(self, messages, **kwargs):
+                        # Remover el argumento tools si existe
+                        kwargs.pop('tools', None) 
+                        kwargs.pop('tool_choice', None)
+                        return super().response(messages, **kwargs)
+                
+                ollama_model = OllamaNoTools(id=MODEL_ID, host=OLLAMA_HOST)
                 ollama_model.tools = None
                 ollama_model.tool_choice = None
+            else:
+                ollama_model = Ollama(id=MODEL_ID, host=OLLAMA_HOST)
             
             agent = Agent(
                 name=f"Insurance Agent - {session_id[:8]}",
