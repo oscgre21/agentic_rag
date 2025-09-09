@@ -640,6 +640,41 @@ semantic_cache = SemanticCache(
     table_name="semantic_cache_ollama"
 )
 
+def check_ollama_tools_support() -> bool:
+    """
+    Check if the current ollama version supports tools parameter.
+    Returns True if tools are supported, False otherwise.
+    """
+    try:
+        import ollama
+        # Check ollama version
+        version = getattr(ollama, '__version__', '0.0.0')
+        logger.debug(f"Ollama version detected: {version}")
+        
+        # Parse version - tools support was added in 0.3.x
+        try:
+            major, minor = map(int, version.split('.')[:2])
+            supports_tools = (major > 0) or (major == 0 and minor >= 3)
+            
+            if not supports_tools:
+                logger.warning(f"⚠️ Ollama version {version} does not support tools. Knowledge base search will be disabled.")
+                logger.warning("   Please upgrade ollama to version 0.3.3 or higher: pip install ollama>=0.3.3")
+            else:
+                logger.info(f"✅ Ollama version {version} supports tools")
+            
+            return supports_tools
+        except:
+            # If we can't parse version, assume old version without tools support
+            logger.warning("⚠️ Could not determine ollama version. Assuming no tools support.")
+            return False
+            
+    except ImportError:
+        logger.error("❌ Ollama module not found")
+        return False
+    except Exception as e:
+        logger.error(f"Error checking ollama tools support: {e}")
+        return False
+
 def get_or_create_agent(session_id: str = None, messages: List[Message] = None) -> tuple[Agent, str]:
     """Get existing agent or create new one for the session with conversation history"""
     if not session_id:
@@ -651,21 +686,33 @@ def get_or_create_agent(session_id: str = None, messages: List[Message] = None) 
             if not knowledge_base:
                 logger.warning("⚠️ Knowledge base no está disponible para el agente")
             
+            # Verificar versión de ollama para determinar si soporta tools
+            ollama_supports_tools = check_ollama_tools_support()
+            
+            # Crear modelo Ollama con configuración ajustada
+            ollama_model = Ollama(id=MODEL_ID, host=OLLAMA_HOST)
+            
+            # Si no soporta tools, configurar el modelo para no usarlas
+            if not ollama_supports_tools:
+                # Disable tools in the model to prevent the error
+                ollama_model.tools = None
+                ollama_model.tool_choice = None
+            
             agent = Agent(
                 name=f"Insurance Agent - {session_id[:8]}",
                 agent_id=f"insurance-agent-{session_id}",
-                model=Ollama(id=MODEL_ID, host=OLLAMA_HOST),
-                knowledge=knowledge_base,
-                search_knowledge=True,
+                model=ollama_model,
+                knowledge=knowledge_base if ollama_supports_tools else None,  # Disable knowledge if tools not supported
+                search_knowledge=ollama_supports_tools,  # Only search if tools are supported
                 read_chat_history=True,
                 storage=PgAgentStorage(
                     table_name="insurance_api_sessions",
                     db_url=db_url
                 ),
                 instructions=[
-                    "For the provided topic, run 3 different searches.",
-                    "Read the results carefully and prepare a worthy report.",
-                    "Focus on facts and make sure to provide references.",
+                    "For the provided topic, run 3 different searches." if ollama_supports_tools else "Provide helpful information based on the query.",
+                    "Read the results carefully and prepare a worthy report." if ollama_supports_tools else "Be informative and professional.",
+                    "Focus on facts and make sure to provide references." if ollama_supports_tools else "Provide clear and accurate information.",
                     "If the knowledge base is empty or unavailable, provide a helpful response indicating this.",
                     # "Siempre busca primero en tu base de conocimientos y úsala si está disponible.",
                     # "Realiza la busqueda utilizando diferentes enfoques para obtener los mejores resultados. tomando en cuenta el contexto de la conversación. y el idioma en que se está llevando a cabo la conversación.",
@@ -827,7 +874,13 @@ async def chat(request: ChatRequest):
         context = request.message
         
         # Configurar búsqueda en knowledge base
-        agent.search_knowledge = True  
+        # Solo permitir búsqueda si ollama soporta tools
+        ollama_supports_tools = check_ollama_tools_support()
+        if request.search_knowledge and not ollama_supports_tools:
+            logger.warning("⚠️ Knowledge base search requested but ollama doesn't support tools. Disabling search.")
+            agent.search_knowledge = False
+        else:
+            agent.search_knowledge = request.search_knowledge  
         
         # Obtener respuesta del agente RAG
         print(f"\n{'='*60}")
