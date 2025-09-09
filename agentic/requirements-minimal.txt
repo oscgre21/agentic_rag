@@ -7,9 +7,9 @@ python-dotenv==1.0.0
 httpx==0.25.2
 requests==2.32.3
 
-# Phi framework and Ollama - let pip resolve versions
+# Phi framework and Ollama
 phidata
-ollama
+ollama>=0.3.3
 
 # Database
 psycopg[binary]==3.1.12
