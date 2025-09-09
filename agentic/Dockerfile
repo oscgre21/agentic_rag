@@ -4,13 +4,17 @@ FROM python:3.11-slim AS builder
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies for building Python packages
+# Install system dependencies for building Python packages and PDF processing
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     build-essential \
     libpq-dev \
     curl \
+    # PDF processing dependencies
+    libpoppler-cpp-dev \
+    poppler-utils \
+    tesseract-ocr \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file - use minimal for faster builds
@@ -36,6 +40,10 @@ ENV PYTHONUNBUFFERED=1 \
 RUN apt-get update && apt-get install -y \
     libpq5 \
     curl \
+    # PDF processing runtime dependencies
+    libpoppler-cpp0v5 \
+    poppler-utils \
+    tesseract-ocr \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user

@@ -196,10 +196,21 @@ knowledge_base = PDFKnowledgeBase(
 
 # Load knowledge base once at startup
 try:
+    # Verificar que pypdf esté instalado antes de cargar
+    try:
+        import pypdf
+        logger.info(f"pypdf version {pypdf.__version__} detectado")
+    except ImportError:
+        logger.error("pypdf no está instalado. Instale con: pip install pypdf==5.4.0")
+        raise ImportError("pypdf es requerido para PDFKnowledgeBase. Instale con: pip install pypdf==5.4.0")
+    
     #knowledge_base.load(upsert=True)
-    print("Knowledge base cargado exitosamente")
+    logger.info("Knowledge base cargado exitosamente")
+except ImportError as ie:
+    logger.error(f"Dependencia faltante: {ie}")
+    logger.info("Continuando sin cargar el knowledge base...")
 except Exception as e:
-    print(f"Error cargando knowledge base: {e}")
+    logger.warning(f"Error cargando knowledge base: {e}")
 
 # Store active agents by session
 active_agents: Dict[str, Agent] = {}

@@ -19,3 +19,8 @@ pgvector==0.2.3
 # Pydantic - let pip resolve the version
 pydantic
 pydantic-settings
+
+# PDF processing libraries required for PDFKnowledgeBase
+pypdf==5.4.0
+pdfplumber==0.11.7
+PyPDF2==3.0.1
