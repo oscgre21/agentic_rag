@@ -243,7 +243,7 @@ try:
         logger.warning("⚠️ El knowledge base estará vacío hasta que se carguen documentos")
     else:
         logger.info(f"Cargando {len(pdf_files)} archivos PDF al knowledge base...")
-        #knowledge_base.load(upsert=True)
+        #knowledge_base.load(upsert=True)        
         logger.info("✅ Knowledge base cargado exitosamente")
 except ImportError as ie:
     logger.error(f"Dependencia faltante: {ie}")
