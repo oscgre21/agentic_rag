@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # Solo la API de Agentic
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentic-api
+    environment:
+      # Configuración de base de datos externa
+      AGENTIC_DB_URL: ${AGENTIC_DB_URL:-postgresql+psycopg://ai:ai@host.docker.internal:5532/ai}
+      
+      # Configuración de Ollama externa
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      AGENTIC_MODEL_ID: ${AGENTIC_MODEL_ID:-qwen3:4b}
+      AGENTIC_EMBEDDER_MODEL: ${AGENTIC_EMBEDDER_MODEL:-nomic-embed-text}
+      AGENTIC_RESPONSE_MODEL: ${AGENTIC_RESPONSE_MODEL:-qwen2.5:7b-instruct}
+      
+      # Configuración del caché
+      AGENTIC_CACHE_ENABLED: ${AGENTIC_CACHE_ENABLED:-true}
+      AGENTIC_CACHE_SIMILARITY_THRESHOLD: ${AGENTIC_CACHE_SIMILARITY_THRESHOLD:-0.88}
+      AGENTIC_CACHE_TTL_HOURS: ${AGENTIC_CACHE_TTL_HOURS:-24}
+      AGENTIC_CACHE_MAX_ENTRIES: ${AGENTIC_CACHE_MAX_ENTRIES:-1000}
+      
+      # Configuración de archivos
+      AGENTIC_MAX_FILE_SIZE: ${AGENTIC_MAX_FILE_SIZE:-10485760}
+      
+      # Logging
+      AGENTIC_LOG_LEVEL: ${AGENTIC_LOG_LEVEL:-INFO}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./docs:/home/appuser/app/docs
+      - ./.env:/home/appuser/app/.env:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
