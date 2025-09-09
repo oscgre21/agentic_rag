@@ -104,13 +104,46 @@ app.add_middleware(
 db_url = os.environ.get("AGENTIC_DB_URL", "postgresql+psycopg://ai:ai@localhost:5532/ai")
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 MODEL_ID = os.environ.get("AGENTIC_MODEL_ID", "qwen3:4b")
-EMBEDDER_MODEL = os.environ.get("AGENTIC_EMBEDDER_MODEL", "nomic-embed-text")
+EMBEDDER_MODEL = os.environ.get("AGENTIC_EMBEDDER_MODEL", "nomic-embed-text:latest")
+
+# Verificar conectividad con PostgreSQL
+try:
+    from sqlalchemy import create_engine, text
+    engine = create_engine(db_url)
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT 1"))
+        logger.info(f"✅ Conexión exitosa con PostgreSQL")
+except Exception as e:
+    logger.error(f"❌ Error conectando con PostgreSQL: {e}")
+    logger.error(f"   URL: {db_url}")
+    logger.error("   Verifique que PostgreSQL esté ejecutándose y accesible")
 
 # Debug: Imprimir la configuración cargada
-print(f"📋 Configuración cargada:") 
-print(f"   Ollama Host: {OLLAMA_HOST}")
-print(f"   Model ID: {MODEL_ID}")
-print(f"   Embedder: {EMBEDDER_MODEL}")
+logger.info(f"📋 Configuración cargada:") 
+logger.info(f"   Ollama Host: {OLLAMA_HOST}")
+logger.info(f"   Model ID: {MODEL_ID}")
+logger.info(f"   Embedder: {EMBEDDER_MODEL}")
+
+# Verificar conectividad con Ollama
+try:
+    import requests
+    response = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=5)
+    if response.status_code == 200:
+        logger.info(f"✅ Conexión exitosa con Ollama en {OLLAMA_HOST}")
+        models = response.json().get('models', [])
+        model_names = [m['name'] for m in models if 'name' in m]
+        if MODEL_ID not in model_names:
+            logger.warning(f"⚠️ Modelo {MODEL_ID} no encontrado en Ollama")
+            logger.info(f"   Modelos disponibles: {model_names}")
+        if EMBEDDER_MODEL not in model_names:
+            logger.warning(f"⚠️ Embedder {EMBEDDER_MODEL} no encontrado en Ollama")
+    else:
+        logger.error(f"❌ Error conectando con Ollama: Status {response.status_code}")
+except requests.exceptions.ConnectionError:
+    logger.error(f"❌ No se pudo conectar con Ollama en {OLLAMA_HOST}")
+    logger.error("   Verifique que Ollama esté ejecutándose y accesible")
+except Exception as e:
+    logger.warning(f"⚠️ Error verificando Ollama: {e}")
 
 RESPONSE_MODEL = os.environ.get("AGENTIC_RESPONSE_MODEL", "qwen2.5:7b-instruct")
 
@@ -204,13 +237,23 @@ try:
         logger.error("pypdf no está instalado. Instale con: pip install pypdf==5.4.0")
         raise ImportError("pypdf es requerido para PDFKnowledgeBase. Instale con: pip install pypdf==5.4.0")
     
-    #knowledge_base.load(upsert=True)
-    logger.info("Knowledge base cargado exitosamente")
+    # Verificar si hay archivos PDF
+    if not pdf_files:
+        logger.warning("⚠️ No se encontraron archivos PDF en docs/")
+        logger.warning("⚠️ El knowledge base estará vacío hasta que se carguen documentos")
+    else:
+        logger.info(f"Cargando {len(pdf_files)} archivos PDF al knowledge base...")
+        knowledge_base.load(upsert=True)
+        logger.info("✅ Knowledge base cargado exitosamente")
 except ImportError as ie:
     logger.error(f"Dependencia faltante: {ie}")
     logger.info("Continuando sin cargar el knowledge base...")
 except Exception as e:
-    logger.warning(f"Error cargando knowledge base: {e}")
+    logger.error(f"Error cargando knowledge base: {e}")
+    logger.error(f"Tipo de error: {type(e).__name__}")
+    import traceback
+    logger.error(f"Stack trace:\n{traceback.format_exc()}")
+    logger.warning("⚠️ Continuando con knowledge base vacío")
 
 # Store active agents by session
 active_agents: Dict[str, Agent] = {}
@@ -248,9 +291,10 @@ class SemanticCache:
         # Crear tabla si no existe
         try:
             self.vector_db.create()
-            print(f"🗄️ Semantic Cache inicializado - Tabla: {table_name}")
+            logger.info(f"🗄️ Semantic Cache inicializado - Tabla: {table_name}")
         except Exception as e:
-            print(f"⚠️ Nota sobre tabla de caché: {e}")
+            logger.warning(f"⚠️ Nota sobre tabla de caché: {e}")
+            # No es crítico si la tabla ya existe
             
         print(f"   - Threshold: {self.similarity_threshold}")
         print(f"   - TTL: {self.ttl_hours} horas")
@@ -602,36 +646,49 @@ def get_or_create_agent(session_id: str = None, messages: List[Message] = None) 
         session_id = str(uuid.uuid4())
     
     if session_id not in active_agents:
-        agent = Agent(
-            name=f"Insurance Agent - {session_id[:8]}",
-            agent_id=f"insurance-agent-{session_id}",
-            model=Ollama(id=MODEL_ID, host=OLLAMA_HOST),
-            knowledge=knowledge_base,
-            search_knowledge=True,
-            read_chat_history=True,
-            storage=PgAgentStorage(
-                table_name="insurance_api_sessions",
-                db_url=db_url
-            ),
-            instructions=[
-                "For the provided topic, run 3 different searches.",
-                "Read the results carefully and prepare a worthy report.",
-                "Focus on facts and make sure to provide references.",
-                # "Siempre busca primero en tu base de conocimientos y úsala si está disponible.",
-                # "Realiza la busqueda utilizando diferentes enfoques para obtener los mejores resultados. tomando en cuenta el contexto de la conversación. y el idioma en que se está llevando a cabo la conversación.",
-                # "IMPORTANTE: Al final de tu respuesta, SIEMPRE incluye una sección llamada 'REFERENCES:' donde listes EXACTAMENTE los documentos y páginas consultados en el formato: [DocumentName.pdf - Page X]",
-                # "Si se mencionan beneficios o coberturas, inclúyelos detalladamente en la respuesta.",
-                # "Importante: Usa tablas cuando sea posible para comparar productos o beneficios.",
-                # "Responde en español y sé claro con los términos de seguros.",
-                # "Mantén el contexto de la conversación previa cuando respondas.",
-                # "Cada vez que cites información, incluye la referencia entre corchetes [Document.pdf - Page X]",
-            ],
-            markdown=True, 
-            show_tool_calls=True,        # Muestra las llamadas a herramientas
-            debug_mode=True,             # Modo debug completo
-            monitoring=True,             # Habilita monitoring
-        )
-        active_agents[session_id] = agent
+        try:
+            # Verificar si el knowledge base está disponible
+            if not knowledge_base:
+                logger.warning("⚠️ Knowledge base no está disponible para el agente")
+            
+            agent = Agent(
+                name=f"Insurance Agent - {session_id[:8]}",
+                agent_id=f"insurance-agent-{session_id}",
+                model=Ollama(id=MODEL_ID, host=OLLAMA_HOST),
+                knowledge=knowledge_base,
+                search_knowledge=True,
+                read_chat_history=True,
+                storage=PgAgentStorage(
+                    table_name="insurance_api_sessions",
+                    db_url=db_url
+                ),
+                instructions=[
+                    "For the provided topic, run 3 different searches.",
+                    "Read the results carefully and prepare a worthy report.",
+                    "Focus on facts and make sure to provide references.",
+                    "If the knowledge base is empty or unavailable, provide a helpful response indicating this.",
+                    # "Siempre busca primero en tu base de conocimientos y úsala si está disponible.",
+                    # "Realiza la busqueda utilizando diferentes enfoques para obtener los mejores resultados. tomando en cuenta el contexto de la conversación. y el idioma en que se está llevando a cabo la conversación.",
+                    # "IMPORTANTE: Al final de tu respuesta, SIEMPRE incluye una sección llamada 'REFERENCES:' donde listes EXACTAMENTE los documentos y páginas consultados en el formato: [DocumentName.pdf - Page X]",
+                    # "Si se mencionan beneficios o coberturas, inclúyelos detalladamente en la respuesta.",
+                    # "Importante: Usa tablas cuando sea posible para comparar productos o beneficios.",
+                    # "Responde en español y sé claro con los términos de seguros.",
+                    # "Mantén el contexto de la conversación previa cuando respondas.",
+                    # "Cada vez que cites información, incluye la referencia entre corchetes [Document.pdf - Page X]",
+                ],
+                markdown=True, 
+                show_tool_calls=True,        # Muestra las llamadas a herramientas
+                debug_mode=True,             # Modo debug completo
+                monitoring=True,             # Habilita monitoring
+            )
+            active_agents[session_id] = agent
+            logger.debug(f"✅ Agente creado exitosamente para sesión: {session_id[:8]}")
+        except Exception as e:
+            logger.error(f"Error creando agente: {e}")
+            logger.error(f"Tipo de error: {type(e).__name__}")
+            import traceback
+            logger.error(f"Stack trace:\n{traceback.format_exc()}")
+            raise
     
     # Si hay mensajes previos, actualizar el historial del agente
     agent = active_agents[session_id]
@@ -770,7 +827,7 @@ async def chat(request: ChatRequest):
         context = request.message
         
         # Configurar búsqueda en knowledge base
-        agent.search_knowledge = True
+        agent.search_knowledge = True  
         
         # Obtener respuesta del agente RAG
         print(f"\n{'='*60}")
@@ -814,15 +871,27 @@ async def chat(request: ChatRequest):
         
         # Si no hay caché o está deshabilitado, ejecutar el agente
         if not cache_used:
-            if request.stream:
-                # Para streaming, necesitarías implementar SSE o WebSockets
-                response_text = ""
-                for chunk in agent.run(context, stream=True):
-                    if hasattr(chunk, 'content'):
-                        response_text += chunk.content
-            else:
-                response = agent.run(context)
-                response_text = response.content if hasattr(response, 'content') else str(response)
+            try:
+                if request.stream:
+                    # Para streaming, necesitarías implementar SSE o WebSockets
+                    response_text = ""
+                    for chunk in agent.run(context, stream=True):
+                        if hasattr(chunk, 'content'):
+                            response_text += chunk.content
+                else:
+                    logger.debug(f"Ejecutando agent.run() para: {context[:100]}...")
+                    response = agent.run(context)
+                    response_text = response.content if hasattr(response, 'content') else str(response)
+                    logger.debug(f"Agent.run() completado exitosamente")
+            except Exception as agent_error:
+                logger.error(f"Error ejecutando agent.run(): {agent_error}")
+                logger.error(f"Tipo de error: {type(agent_error).__name__}")
+                import traceback
+                logger.error(f"Stack trace:\n{traceback.format_exc()}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Error ejecutando el agente: {str(agent_error)}"
+                )
             
             print(f"✅ Respuesta generada - Longitud: {len(response_text)} caracteres")
             
