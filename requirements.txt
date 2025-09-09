@@ -161,3 +161,5 @@ sqlalchemy
 psycopg[binary]
 pgvector
 fastapi[standard]
+pdfplumber==0.11.7
+PyPDF2==3.0.1
