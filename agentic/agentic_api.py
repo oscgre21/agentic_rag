@@ -614,17 +614,22 @@ def get_or_create_agent(session_id: str = None, messages: List[Message] = None) 
                 db_url=db_url
             ),
             instructions=[
-                "Siempre busca primero en tu base de conocimientos y úsala si está disponible.",
-                "Realiza la busqueda utilizando diferentes enfoques para obtener los mejores resultados. tomando en cuenta el contexto de la conversación. y el idioma en que se está llevando a cabo la conversación.",
-                "IMPORTANTE: Al final de tu respuesta, SIEMPRE incluye una sección llamada 'REFERENCES:' donde listes EXACTAMENTE los documentos y páginas consultados en el formato: [DocumentName.pdf - Page X]",
-                "Si se mencionan beneficios o coberturas, inclúyelos detalladamente en la respuesta.",
-                "Importante: Usa tablas cuando sea posible para comparar productos o beneficios.",
-                "Responde en español y sé claro con los términos de seguros.",
-                "Mantén el contexto de la conversación previa cuando respondas.",
-                "Cada vez que cites información, incluye la referencia entre corchetes [Document.pdf - Page X]",
+                "For the provided topic, run 3 different searches.",
+                "Read the results carefully and prepare a worthy report.",
+                "Focus on facts and make sure to provide references.",
+                # "Siempre busca primero en tu base de conocimientos y úsala si está disponible.",
+                # "Realiza la busqueda utilizando diferentes enfoques para obtener los mejores resultados. tomando en cuenta el contexto de la conversación. y el idioma en que se está llevando a cabo la conversación.",
+                # "IMPORTANTE: Al final de tu respuesta, SIEMPRE incluye una sección llamada 'REFERENCES:' donde listes EXACTAMENTE los documentos y páginas consultados en el formato: [DocumentName.pdf - Page X]",
+                # "Si se mencionan beneficios o coberturas, inclúyelos detalladamente en la respuesta.",
+                # "Importante: Usa tablas cuando sea posible para comparar productos o beneficios.",
+                # "Responde en español y sé claro con los términos de seguros.",
+                # "Mantén el contexto de la conversación previa cuando respondas.",
+                # "Cada vez que cites información, incluye la referencia entre corchetes [Document.pdf - Page X]",
             ],
-            markdown=True,
-            show_tool_calls=False,
+            markdown=True, 
+            show_tool_calls=True,        # Muestra las llamadas a herramientas
+            debug_mode=True,             # Modo debug completo
+            monitoring=True,             # Habilita monitoring
         )
         active_agents[session_id] = agent
     
