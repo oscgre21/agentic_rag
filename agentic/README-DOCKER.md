@@ -35,7 +35,7 @@ Create a `.env` file with your configuration:
 # Database (external)
 AGENTIC_DB_URL=postgresql+psycopg://ai:ai@host.docker.internal:5532/ai
 
-# Ollama (external)
+# Ollama server (external)
 OLLAMA_HOST=http://host.docker.internal:11434
 AGENTIC_MODEL_ID=qwen3:4b
 AGENTIC_EMBEDDER_MODEL=nomic-embed-text

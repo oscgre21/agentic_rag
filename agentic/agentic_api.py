@@ -102,11 +102,13 @@ app.add_middleware(
 
 # Global configuration - Read from environment variables with defaults
 db_url = os.environ.get("AGENTIC_DB_URL", "postgresql+psycopg://ai:ai@localhost:5532/ai")
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 MODEL_ID = os.environ.get("AGENTIC_MODEL_ID", "qwen3:4b")
 EMBEDDER_MODEL = os.environ.get("AGENTIC_EMBEDDER_MODEL", "nomic-embed-text")
 
 # Debug: Imprimir la configuración cargada
 print(f"📋 Configuración cargada:") 
+print(f"   Ollama Host: {OLLAMA_HOST}")
 print(f"   Model ID: {MODEL_ID}")
 print(f"   Embedder: {EMBEDDER_MODEL}")
 
@@ -188,7 +190,7 @@ knowledge_base = PDFKnowledgeBase(
         table_name="insurance_docs_ollama",
         db_url=db_url,
         search_type=SearchType.hybrid,
-        embedder=OllamaEmbedder(model=EMBEDDER_MODEL, dimensions=768),
+        embedder=OllamaEmbedder(model=EMBEDDER_MODEL, dimensions=768, host=OLLAMA_HOST),
     ),
 )
 
@@ -203,7 +205,7 @@ except Exception as e:
 active_agents: Dict[str, Agent] = {}
 
 # Instancia de Ollama para formateo
-formatting_model = Ollama(id=RESPONSE_MODEL)
+formatting_model = Ollama(id=RESPONSE_MODEL, host=OLLAMA_HOST)
 
 # Clase para Semantic Caching
 class SemanticCache:
@@ -215,7 +217,7 @@ class SemanticCache:
     def __init__(self, db_url: str, embedder_model: str, table_name: str = "semantic_cache_ollama"):
         self.db_url = db_url
         self.table_name = table_name
-        self.embedder = OllamaEmbedder(model=embedder_model, dimensions=768)
+        self.embedder = OllamaEmbedder(model=embedder_model, dimensions=768, host=OLLAMA_HOST)
         self.vector_db = PgVector(
             table_name=table_name,
             db_url=db_url,
@@ -592,7 +594,7 @@ def get_or_create_agent(session_id: str = None, messages: List[Message] = None) 
         agent = Agent(
             name=f"Insurance Agent - {session_id[:8]}",
             agent_id=f"insurance-agent-{session_id}",
-            model=Ollama(id=MODEL_ID),
+            model=Ollama(id=MODEL_ID, host=OLLAMA_HOST),
             knowledge=knowledge_base,
             search_knowledge=True,
             read_chat_history=True,
