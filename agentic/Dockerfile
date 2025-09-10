@@ -13,15 +13,11 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements file - use minimal for faster builds
-COPY requirements-minimal.txt requirements.txt* ./
+# Copy requirements file
+COPY requirements.txt ./
 
 # Install Python dependencies
-RUN if [ -f requirements-minimal.txt ]; then \
-        pip install --no-cache-dir --user -r requirements-minimal.txt; \
-    else \
-        pip install --no-cache-dir --user -r requirements.txt; \
-    fi
+RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Runtime stage
 FROM python:3.11-slim
@@ -52,13 +48,15 @@ COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 
 # Copy the refactored application structure
 COPY --chown=appuser:appuser app.py .
+COPY --chown=appuser:appuser run.py .
+COPY --chown=appuser:appuser __init__.py .
 COPY --chown=appuser:appuser config/ ./config/
 COPY --chown=appuser:appuser models/ ./models/
 COPY --chown=appuser:appuser services/ ./services/
 COPY --chown=appuser:appuser routers/ ./routers/
 COPY --chown=appuser:appuser utils/ ./utils/
 COPY --chown=appuser:appuser core/ ./core/
-COPY --chown=appuser:appuser .env.example .
+COPY --chown=appuser:appuser .env.example* .
 
 # Create docs directory for PDFs
 RUN mkdir -p docs && chown -R appuser:appuser docs
@@ -76,5 +74,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Default command - using the refactored app
-CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Default command - using the run script
+CMD ["python", "run.py"]

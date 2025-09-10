@@ -13,3 +13,4 @@ docs/
 neo4j_db/
 chroma_db/
 __pycache__
+__pycache__/
