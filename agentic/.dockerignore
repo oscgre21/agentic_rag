@@ -4,10 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
-venv/
-ENV/
-build/
 develop-eggs/
 dist/
 downloads/
@@ -23,23 +19,10 @@ wheels/
 .installed.cfg
 *.egg
 
-# Testing
-.coverage
-.pytest_cache/
-htmlcov/
-.tox/
-.coverage.*
-*.cover
-.hypothesis/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-*.ipynb
-
-# Environment files
-.env
-.env.local
-.env.*.local
+# Virtual environments
+venv/
+env/
+ENV/
 
 # IDE
 .vscode/
@@ -47,7 +30,6 @@ htmlcov/
 *.swp
 *.swo
 *~
-.DS_Store
 
 # Git
 .git/
@@ -55,25 +37,38 @@ htmlcov/
 
 # Documentation
 *.md
+README*
 docs/*.md
-LICENSE
 
 # Docker
 Dockerfile
-docker-compose.yml
+docker-compose*.yml
 .dockerignore
 
-# Test files
-test_*.py
+# Environment files (will be copied separately if needed)
+.env.local
+.env.development
+.env.test
+
+# Tests
 tests/
+test/
+*_test.py
+*_test.go
 
 # Logs
 *.log
 logs/
 
-# Cache
-.cache/
-*.cache
+# OS files
+.DS_Store
+Thumbs.db
+
+# Old files
+agentic_api.py
+agentic_api_old.py
+agentic_api_backup.py
+*.bak
 
 # Temporary files
 tmp/

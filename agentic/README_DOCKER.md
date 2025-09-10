@@ -1,333 +1,340 @@
 # 🐳 Agentic API - Docker Setup
 
-Deploy the Agentic RAG API with one command using Docker!
+## 📦 Estructura Docker Actualizada
 
-## 🚀 Quick Start (5 minutes)
+La aplicación ha sido refactorizada y el Dockerfile actualizado para usar la nueva estructura modular:
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/your-repo/knowledge-graph-rag.git
-cd knowledge-graph-rag/agentic
-
-# 2. Start all services
-./docker-start.sh
-
-# 3. Test the API
-curl http://localhost:8000/health
+```
+agentic/
+├── app.py                 # Aplicación principal
+├── config/                # Configuración
+├── models/                # Esquemas de datos
+├── services/              # Lógica de negocio
+├── routers/               # Endpoints API
+├── utils/                 # Utilidades
+├── core/                  # Dependencias
+├── Dockerfile             # Imagen Docker
+├── docker-compose.yml     # Orquestación
+└── .dockerignore          # Archivos excluidos
 ```
 
-That's it! The API is now running at http://localhost:8000
+## 🚀 Quick Start
 
-## 📦 What's Included
-
-The Docker setup includes everything you need:
-
-- ✅ **Agentic API** - The main RAG application
-- ✅ **PostgreSQL + pgvector** - Database with vector search
-- ✅ **Ollama** - Local LLM models (no external API needed!)
-- ✅ **Auto-configuration** - Models download automatically
-- ✅ **Health checks** - Services monitor themselves
-- ✅ **Persistent storage** - Your data is safe between restarts
-
-## 🛠️ Installation Options
-
-### Option 1: Using the Quick Start Script (Recommended)
+### Opción 1: Docker Compose (Recomendado)
 
 ```bash
-# Start services
-./docker-start.sh start
-
-# View logs
-./docker-start.sh logs
-
-# Stop services
-./docker-start.sh stop
-
-# Get help
-./docker-start.sh help
-```
-
-### Option 2: Using Docker Compose Directly
-
-```bash
-# Start services in background
+# Construir y ejecutar
 docker-compose up -d
 
-# View logs
-docker-compose logs -f
+# Ver logs
+docker-compose logs -f api
 
-# Stop services
+# Detener
 docker-compose down
 ```
 
-### Option 3: Build from Source
+### Opción 2: Docker Build & Run
 
 ```bash
-# Build and start
-docker-compose up -d --build
+# Construir imagen
+docker build -t agentic-api:latest .
 
-# Or build specific image
-docker build -t agentic-api .
+# Ejecutar contenedor
+docker run -d \
+  --name agentic-api \
+  -p 8000:8000 \
+  -v $(pwd)/docs:/home/appuser/app/docs \
+  -e AGENTIC_DB_URL='postgresql+psycopg://ai:ai@host.docker.internal:5532/ai' \
+  -e OLLAMA_HOST='http://host.docker.internal:11434' \
+  --add-host host.docker.internal:host-gateway \
+  agentic-api:latest
 ```
 
-## 📝 Configuration
+### Opción 3: Script de Build
 
-### Basic Configuration
+```bash
+# Usar el script de build incluido
+./build-docker.sh
+```
 
-Create a `.env` file (or copy from `.env.example`):
+## 🔧 Configuración
 
-```env
-# Use smaller models for testing (faster)
-AGENTIC_MODEL_ID=qwen2:0.5b
-AGENTIC_EMBEDDER_MODEL=nomic-embed-text
-AGENTIC_RESPONSE_MODEL=qwen2:0.5b
+### Variables de Entorno
 
-# Or use larger models for better quality
-AGENTIC_MODEL_ID=qwen3:4b
+```bash
+# Base de datos PostgreSQL
+AGENTIC_DB_URL=postgresql+psycopg://ai:ai@host.docker.internal:5532/ai
+
+# Ollama (LLM)
+OLLAMA_HOST=http://host.docker.internal:11434
+AGENTIC_MODEL_ID=qwen3:8b
+AGENTIC_EMBEDDER_MODEL=nomic-embed-text:latest
 AGENTIC_RESPONSE_MODEL=qwen2.5:7b-instruct
 
-# Enable debug logging
-AGENTIC_LOG_LEVEL=DEBUG
-```
-
-### Memory Requirements
-
-| Model Size | RAM Required | Recommended |
-|------------|--------------|-------------|
-| 0.5B params | 2GB | Testing |
-| 4B params | 4GB | Development |
-| 7B params | 8GB | Production |
-| 14B params | 16GB | High Quality |
-
-## 📚 Usage Examples
-
-### Upload a PDF Document
-
-```bash
-curl -X POST "http://localhost:8000/upload-pdf" \
-  -F "file=@document.pdf"
-```
-
-### Ask Questions
-
-```bash
-curl -X POST "http://localhost:8000/chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "What insurance products are available?",
-    "search_knowledge": true
-  }'
-```
-
-### Python Client Example
-
-```python
-import httpx
-
-async def chat_with_api():
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            "http://localhost:8000/chat",
-            json={
-                "message": "Tell me about life insurance",
-                "search_knowledge": True,
-                "format_response": True
-            }
-        )
-        print(response.json()["response"])
-```
-
-## 🔍 Monitoring
-
-### Check Service Status
-
-```bash
-# Quick status
-./docker-start.sh status
-
-# Detailed status
-docker-compose ps
-
-# Service health
-curl http://localhost:8000/health
-curl http://localhost:11434/api/tags
-```
-
-### View Logs
-
-```bash
-# All services
-./docker-start.sh logs
-
-# Specific service
-./docker-start.sh logs api
-./docker-start.sh logs ollama
-./docker-start.sh logs postgres
-
-# Follow logs in real-time
-docker-compose logs -f api
-```
-
-## 🐛 Troubleshooting
-
-### Problem: Services won't start
-
-```bash
-# Check Docker is running
-docker version
-
-# Check ports are available
-lsof -i :8000
-lsof -i :11434
-lsof -i :5532
-
-# Reset everything
-./docker-start.sh clean
-./docker-start.sh start
-```
-
-### Problem: Out of memory
-
-```bash
-# Use smaller models
-echo "AGENTIC_MODEL_ID=qwen2:0.5b" >> .env
-docker-compose restart api
-
-# Check memory usage
-docker stats
-```
-
-### Problem: Slow responses
-
-```bash
-# Enable cache
-echo "AGENTIC_CACHE_ENABLED=true" >> .env
-
-# Use faster models
-echo "AGENTIC_MODEL_ID=qwen2:0.5b" >> .env
-
-# Restart
-docker-compose restart api
-```
-
-### Problem: Models not downloading
-
-```bash
-# Manual pull
-docker-compose run --rm ollama-pull
-
-# Or directly
-docker exec -it agentic-ollama ollama pull qwen3:4b
-```
-
-## 🚢 Production Deployment
-
-### 1. Use Environment Variables
-
-```bash
-# Production .env
-AGENTIC_LOG_LEVEL=WARNING
-POSTGRES_PASSWORD=strong_password_here
+# Cache Semántico
 AGENTIC_CACHE_ENABLED=true
-AGENTIC_CACHE_TTL_HOURS=48
+AGENTIC_CACHE_SIMILARITY_THRESHOLD=0.88
+AGENTIC_CACHE_TTL_HOURS=24
+AGENTIC_CACHE_MAX_ENTRIES=1000
+
+# Archivos
+AGENTIC_MAX_FILE_SIZE=10485760  # 10MB
+
+# Logging
+AGENTIC_LOG_LEVEL=INFO
 ```
 
-### 2. Add SSL/TLS (nginx example)
+### Archivo .env
 
-```nginx
-server {
-    listen 443 ssl;
-    server_name api.yourdomain.com;
-    
-    ssl_certificate /path/to/cert.pem;
-    ssl_certificate_key /path/to/key.pem;
-    
-    location / {
-        proxy_pass http://localhost:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
+Crea un archivo `.env` en el directorio `agentic/`:
+
+```env
+# Configuración de producción
+AGENTIC_DB_URL=postgresql+psycopg://user:pass@postgres:5432/dbname
+OLLAMA_HOST=http://ollama:11434
+AGENTIC_MODEL_ID=llama2:latest
+AGENTIC_LOG_LEVEL=INFO
 ```
 
-### 3. Resource Limits
+## 📁 Volúmenes
 
-Edit `docker-compose.yml`:
+El contenedor expone los siguientes volúmenes:
+
+- `/home/appuser/app/docs`: Directorio para documentos PDF
+
+```bash
+# Montar directorio local de documentos
+docker run -v /path/to/your/pdfs:/home/appuser/app/docs ...
+```
+
+## 🔍 Health Check
+
+El contenedor incluye un health check automático:
+
+```bash
+# Verificar estado del contenedor
+docker ps
+docker inspect agentic-api --format='{{.State.Health.Status}}'
+
+# Verificar manualmente
+curl http://localhost:8000/health
+```
+
+## 🌐 Endpoints Disponibles
+
+- **API Docs**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+- **Health**: http://localhost:8000/health
+- **Chat**: POST http://localhost:8000/chat
+- **Documents**: GET http://localhost:8000/documents
+- **Upload**: POST http://localhost:8000/upload-pdf
+- **Cache Stats**: GET http://localhost:8000/cache/stats
+
+## 🏗️ Arquitectura Docker
+
+### Multi-stage Build
+
+El Dockerfile usa una construcción multi-etapa para optimizar el tamaño:
+
+1. **Builder Stage**: Compila dependencias
+2. **Runtime Stage**: Imagen final optimizada
+
+### Seguridad
+
+- ✅ Usuario no-root (`appuser`)
+- ✅ Imagen base slim
+- ✅ Sin archivos innecesarios (.dockerignore)
+- ✅ Health checks integrados
+
+## 🐛 Debugging
+
+### Ver Logs
+
+```bash
+# Con docker-compose
+docker-compose logs -f api
+
+# Con docker
+docker logs -f agentic-api
+```
+
+### Acceder al Contenedor
+
+```bash
+# Shell interactivo
+docker exec -it agentic-api /bin/bash
+
+# Como root (para debugging)
+docker exec -it --user root agentic-api /bin/bash
+```
+
+### Verificar Conectividad
+
+```bash
+# Verificar Ollama
+docker exec agentic-api curl http://host.docker.internal:11434/api/tags
+
+# Verificar PostgreSQL
+docker exec agentic-api python -c "
+from config.settings import settings
+from utils.validators import check_postgresql_connection
+check_postgresql_connection(settings.DB_URL)
+"
+```
+
+## 🚢 Deployment
+
+### Producción con Docker Compose
 
 ```yaml
+version: '3.8'
+
 services:
   api:
+    image: agentic-api:latest
+    container_name: agentic-api-prod
+    environment:
+      AGENTIC_DB_URL: ${DATABASE_URL}
+      OLLAMA_HOST: ${OLLAMA_URL}
+      AGENTIC_LOG_LEVEL: WARNING
+    ports:
+      - "80:8000"
+    volumes:
+      - ./docs:/home/appuser/app/docs
+      - ./.env.prod:/home/appuser/app/.env:ro
+    restart: always
     deploy:
       resources:
         limits:
           cpus: '2'
-          memory: 4G
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
 ```
 
-### 4. Backup Strategy
-
-```bash
-# Backup script
-#!/bin/bash
-docker exec postgres pg_dump -U ai ai > backup-$(date +%Y%m%d).sql
-tar czf docs-backup-$(date +%Y%m%d).tar.gz docs/
-```
-
-## 📊 Performance Tips
-
-1. **Enable Semantic Cache**: Reduces response time by 80% for repeated queries
-2. **Use Appropriate Models**: Balance speed vs quality
-3. **Add More Workers**: Scale horizontally with `docker-compose scale api=3`
-4. **Optimize PostgreSQL**: Tune `shared_buffers` and `work_mem`
-5. **Use SSD Storage**: Especially for Ollama models
-
-## 🔧 Advanced Configuration
-
-### Custom Ollama Models
-
-```bash
-# Pull custom model
-docker exec -it agentic-ollama ollama pull llama2:13b
-
-# Update .env
-echo "AGENTIC_MODEL_ID=llama2:13b" >> .env
-
-# Restart
-docker-compose restart api
-```
-
-### External PostgreSQL
-
-```env
-# Use external database
-AGENTIC_DB_URL=postgresql+psycopg://user:pass@external-db:5432/dbname
-```
-
-### GPU Support (NVIDIA)
+### Kubernetes
 
 ```yaml
-# In docker-compose.yml
-services:
-  ollama:
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentic-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: agentic-api
+  template:
+    metadata:
+      labels:
+        app: agentic-api
+    spec:
+      containers:
+      - name: api
+        image: agentic-api:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: AGENTIC_DB_URL
+          valueFrom:
+            secretKeyRef:
+              name: agentic-secrets
+              key: db-url
+        - name: OLLAMA_HOST
+          value: "http://ollama-service:11434"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
 ```
 
-## 📄 License
+## 📊 Monitoreo
 
-See LICENSE file in the repository.
+### Prometheus Metrics
 
-## 🤝 Support
+La aplicación puede exportar métricas para Prometheus:
 
-- **Issues**: GitHub Issues
-- **Docs**: See DOCKER_GUIDE.md for detailed documentation
-- **Logs**: Always check logs first: `./docker-start.sh logs`
+```python
+# Agregar en requirements.txt
+prometheus-fastapi-instrumentator
 
----
+# El endpoint /metrics estará disponible
+```
 
-**Happy Deploying! 🚀**
+### Logs Estructurados
+
+Los logs están en formato JSON para facilitar el parsing:
+
+```bash
+docker logs agentic-api | jq '.'
+```
+
+## 🔄 CI/CD
+
+### GitHub Actions
+
+```yaml
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Build Docker image
+      run: |
+        cd agentic
+        docker build -t agentic-api:${{ github.sha }} .
+    
+    - name: Push to Registry
+      run: |
+        echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+        docker push agentic-api:${{ github.sha }}
+```
+
+## 🆘 Troubleshooting
+
+### Problema: No se conecta a Ollama
+
+```bash
+# Solución: Usar host.docker.internal
+OLLAMA_HOST=http://host.docker.internal:11434
+```
+
+### Problema: No se conecta a PostgreSQL
+
+```bash
+# Verificar que PostgreSQL esté corriendo
+pg_isready -h localhost -p 5532
+
+# Usar la IP del host en lugar de localhost
+AGENTIC_DB_URL=postgresql+psycopg://ai:ai@192.168.1.100:5532/ai
+```
+
+### Problema: Permisos en volúmenes
+
+```bash
+# Cambiar permisos del directorio
+sudo chown -R 1000:1000 ./docs
+```
+
+## 📚 Referencias
+
+- [Dockerfile Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+- [Docker Compose Documentation](https://docs.docker.com/compose/)
+- [FastAPI in Containers](https://fastapi.tiangolo.com/deployment/docker/)

@@ -30,6 +30,7 @@ FROM python:3.11-slim
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/home/appuser/.local/bin:${PATH}" \
+    PYTHONPATH="/home/appuser/app:${PYTHONPATH}" \
     OLLAMA_HOST=${OLLAMA_HOST:-http://localhost:11434}
 
 # Install runtime dependencies
@@ -49,8 +50,14 @@ WORKDIR /home/appuser/app
 # Copy Python packages from builder
 COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 
-# Copy application code
-COPY --chown=appuser:appuser agentic_api.py .
+# Copy the refactored application structure
+COPY --chown=appuser:appuser app.py .
+COPY --chown=appuser:appuser config/ ./config/
+COPY --chown=appuser:appuser models/ ./models/
+COPY --chown=appuser:appuser services/ ./services/
+COPY --chown=appuser:appuser routers/ ./routers/
+COPY --chown=appuser:appuser utils/ ./utils/
+COPY --chown=appuser:appuser core/ ./core/
 COPY --chown=appuser:appuser .env.example .
 
 # Create docs directory for PDFs
@@ -69,5 +76,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Default command
-CMD ["python", "agentic_api.py"]
+# Default command - using the refactored app
+CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]

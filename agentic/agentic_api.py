@@ -103,7 +103,7 @@ app.add_middleware(
 # Global configuration - Read from environment variables with defaults
 db_url = os.environ.get("AGENTIC_DB_URL", "postgresql+psycopg://ai:ai@localhost:5532/ai")
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-MODEL_ID = os.environ.get("AGENTIC_MODEL_ID", "qwen3:4b")
+MODEL_ID = os.environ.get("AGENTIC_MODEL_ID", "qwen3:8b")
 EMBEDDER_MODEL = os.environ.get("AGENTIC_EMBEDDER_MODEL", "nomic-embed-text:latest")
 
 # Verificar conectividad con PostgreSQL
