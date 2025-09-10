@@ -4,22 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual environments
 venv/
 env/
 ENV/
@@ -29,7 +13,6 @@ ENV/
 .idea/
 *.swp
 *.swo
-*~
 
 # Git
 .git/
@@ -40,37 +23,30 @@ ENV/
 README*
 docs/*.md
 
-# Docker
-Dockerfile
-docker-compose*.yml
-.dockerignore
-
-# Environment files (will be copied separately if needed)
-.env.local
-.env.development
-.env.test
-
-# Tests
-tests/
-test/
+# Testing
+test_*.py
 *_test.py
-*_test.go
+tests/
+
+# Environment
+.env
+.env.local
+.env.*
 
 # Logs
 *.log
-logs/
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
-# Old files
+# Project specific
 agentic_api.py
 agentic_api_old.py
-agentic_api_backup.py
+agentic_api_new.py
+agentic_app*.py
+test_simple.py
+run.py
 *.bak
-
-# Temporary files
-tmp/
-temp/
-*.tmp
+Dockerfile.bak
+docker-compose.bak.yml

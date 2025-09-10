@@ -26,8 +26,8 @@ FROM python:3.11-slim
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/home/appuser/.local/bin:${PATH}" \
-    PYTHONPATH="/home/appuser/app:${PYTHONPATH}" \
-    OLLAMA_HOST=${OLLAMA_HOST:-http://localhost:11434}
+    PYTHONPATH="/home/appuser/app" \
+    OLLAMA_HOST="http://localhost:11434"
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
@@ -48,15 +48,12 @@ COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 
 # Copy the refactored application structure
 COPY --chown=appuser:appuser app.py .
-COPY --chown=appuser:appuser run.py .
-COPY --chown=appuser:appuser __init__.py .
 COPY --chown=appuser:appuser config/ ./config/
 COPY --chown=appuser:appuser models/ ./models/
 COPY --chown=appuser:appuser services/ ./services/
 COPY --chown=appuser:appuser routers/ ./routers/
 COPY --chown=appuser:appuser utils/ ./utils/
 COPY --chown=appuser:appuser core/ ./core/
-COPY --chown=appuser:appuser .env.example* .
 
 # Create docs directory for PDFs
 RUN mkdir -p docs && chown -R appuser:appuser docs
@@ -74,5 +71,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Default command - using the run script
-CMD ["python", "run.py"]
+# Default command - run the app directly
+CMD ["python", "app.py"]
