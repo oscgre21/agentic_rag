@@ -5,15 +5,29 @@ Siguiendo el principio de Single Responsibility.
 
 from datetime import datetime
 from fastapi import APIRouter, HTTPException
-from ..models.schemas import ChatRequest, ChatResponse, Message, DocumentReference
-from ..core.dependencies import (
-    get_agent_service, 
-    get_semantic_cache, 
-    get_response_formatter
-)
-from ..utils.text_processing import extract_document_references, remove_think_blocks
-from ..utils.validators import check_ollama_tools_support
-from ..config.settings import settings
+
+try:
+    # Absolute imports for Docker/standalone execution
+    from models.schemas import ChatRequest, ChatResponse, Message, DocumentReference
+    from core.dependencies import (
+        get_agent_service, 
+        get_semantic_cache, 
+        get_response_formatter
+    )
+    from utils.text_processing import extract_document_references, remove_think_blocks
+    from utils.validators import check_ollama_tools_support
+    from config.settings import settings
+except ImportError:
+    # Relative imports for package execution
+    from ..models.schemas import ChatRequest, ChatResponse, Message, DocumentReference
+    from ..core.dependencies import (
+        get_agent_service, 
+        get_semantic_cache, 
+        get_response_formatter
+    )
+    from ..utils.text_processing import extract_document_references, remove_think_blocks
+    from ..utils.validators import check_ollama_tools_support
+    from ..config.settings import settings
 
 router = APIRouter()
 

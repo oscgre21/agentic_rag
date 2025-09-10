@@ -11,7 +11,12 @@ from phi.embedder.ollama import OllamaEmbedder
 from phi.knowledge.pdf import PDFKnowledgeBase
 from phi.vectordb.pgvector import PgVector, SearchType
 
-from ..config.settings import settings
+try:
+    # Absolute imports for Docker/standalone execution
+    from config.settings import settings
+except ImportError:
+    # Relative imports for package execution
+    from ..config.settings import settings
 
 logger = logging.getLogger(__name__)
 

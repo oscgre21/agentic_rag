@@ -14,8 +14,14 @@ from phi.document import Document
 from phi.embedder.ollama import OllamaEmbedder
 from phi.vectordb.pgvector import PgVector, SearchType
 
-from ..config.settings import settings
-from ..models.schemas import DocumentReference
+try:
+    # Absolute imports for Docker/standalone execution
+    from config.settings import settings
+    from models.schemas import DocumentReference
+except ImportError:
+    # Relative imports for package execution
+    from ..config.settings import settings
+    from ..models.schemas import DocumentReference
 
 logger = logging.getLogger(__name__)
 

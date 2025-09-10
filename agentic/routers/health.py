@@ -4,9 +4,17 @@ Siguiendo el principio de Single Responsibility.
 """
 
 from fastapi import APIRouter, HTTPException
-from ..models.schemas import HealthResponse, SessionListResponse
-from ..core.dependencies import get_knowledge_service, get_agent_service
-from ..config.settings import settings
+
+try:
+    # Absolute imports for Docker/standalone execution
+    from models.schemas import HealthResponse, SessionListResponse
+    from core.dependencies import get_knowledge_service, get_agent_service
+    from config.settings import settings
+except ImportError:
+    # Relative imports for package execution
+    from ..models.schemas import HealthResponse, SessionListResponse
+    from ..core.dependencies import get_knowledge_service, get_agent_service
+    from ..config.settings import settings
 
 router = APIRouter()
 

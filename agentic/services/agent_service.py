@@ -11,9 +11,16 @@ from phi.model.ollama import Ollama
 from phi.model.message import Message as PhiMessage
 from phi.storage.agent.postgres import PgAgentStorage
 
-from ..config.settings import settings
-from ..models.schemas import Message
-from ..utils.validators import check_ollama_tools_support
+try:
+    # Absolute imports for Docker/standalone execution
+    from config.settings import settings
+    from models.schemas import Message
+    from utils.validators import check_ollama_tools_support
+except ImportError:
+    # Relative imports for package execution
+    from ..config.settings import settings
+    from ..models.schemas import Message
+    from ..utils.validators import check_ollama_tools_support
 
 logger = logging.getLogger(__name__)
 

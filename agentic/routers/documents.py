@@ -7,9 +7,17 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, UploadFile, File
-from ..models.schemas import DocumentListResponse, FileUploadResponse
-from ..core.dependencies import get_knowledge_service, get_semantic_cache, get_agent_service
-from ..config.settings import settings
+
+try:
+    # Absolute imports for Docker/standalone execution
+    from models.schemas import DocumentListResponse, FileUploadResponse
+    from core.dependencies import get_knowledge_service, get_semantic_cache, get_agent_service
+    from config.settings import settings
+except ImportError:
+    # Relative imports for package execution
+    from ..models.schemas import DocumentListResponse, FileUploadResponse
+    from ..core.dependencies import get_knowledge_service, get_semantic_cache, get_agent_service
+    from ..config.settings import settings
 
 router = APIRouter()
 

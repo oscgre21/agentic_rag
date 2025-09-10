@@ -6,8 +6,15 @@ Siguiendo el principio de Single Responsibility.
 import logging
 from phi.model.ollama import Ollama
 from phi.model.message import Message as PhiMessage
-from ..config.settings import settings
-from .text_processing import remove_think_blocks
+
+try:
+    # Absolute imports for Docker/standalone execution
+    from config.settings import settings
+    from utils.text_processing import remove_think_blocks
+except ImportError:
+    # Relative imports for package execution
+    from ..config.settings import settings
+    from .text_processing import remove_think_blocks
 
 logger = logging.getLogger(__name__)
 

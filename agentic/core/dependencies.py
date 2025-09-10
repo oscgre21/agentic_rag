@@ -3,10 +3,18 @@ Dependencias compartidas de la aplicación.
 Siguiendo el principio de Dependency Injection.
 """
 
-from ..services.agent_service import AgentService
-from ..services.knowledge_service import KnowledgeService
-from ..services.cache_service import SemanticCache
-from ..utils.formatting import ResponseFormatter
+try:
+    # Absolute imports for Docker/standalone execution
+    from services.agent_service import AgentService
+    from services.knowledge_service import KnowledgeService
+    from services.cache_service import SemanticCache
+    from utils.formatting import ResponseFormatter
+except ImportError:
+    # Relative imports for package execution
+    from ..services.agent_service import AgentService
+    from ..services.knowledge_service import KnowledgeService
+    from ..services.cache_service import SemanticCache
+    from ..utils.formatting import ResponseFormatter
 
 # Instancias singleton de servicios
 knowledge_service = None

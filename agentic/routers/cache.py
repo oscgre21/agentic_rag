@@ -6,9 +6,17 @@ Siguiendo el principio de Single Responsibility.
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, HTTPException
-from ..models.schemas import CacheStatsResponse, CacheConfigRequest
-from ..core.dependencies import get_semantic_cache
-from ..config.settings import settings
+
+try:
+    # Absolute imports for Docker/standalone execution
+    from models.schemas import CacheStatsResponse, CacheConfigRequest
+    from core.dependencies import get_semantic_cache
+    from config.settings import settings
+except ImportError:
+    # Relative imports for package execution
+    from ..models.schemas import CacheStatsResponse, CacheConfigRequest
+    from ..core.dependencies import get_semantic_cache
+    from ..config.settings import settings
 
 router = APIRouter(prefix="/cache")
 

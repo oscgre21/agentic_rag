@@ -5,7 +5,13 @@ Siguiendo el principio de Single Responsibility.
 
 import re
 from typing import Tuple, List
-from ..models.schemas import DocumentReference
+
+try:
+    # Absolute imports for Docker/standalone execution
+    from models.schemas import DocumentReference
+except ImportError:
+    # Relative imports for package execution
+    from ..models.schemas import DocumentReference
 
 
 def remove_think_blocks(text: str) -> str:
