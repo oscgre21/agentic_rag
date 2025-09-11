@@ -76,7 +76,7 @@ app.include_router(documents.router, tags=["Documents"])
 app.include_router(cache.router, tags=["Cache"])
 
 
-@app.get("/", response_class=HTMLResponse, tags=["UI"])
+@app.get("/chatbot", response_class=HTMLResponse, tags=["UI"])
 async def serve_chatbot():
     """Serve the Flowise chatbot interface"""
     html_content = """
