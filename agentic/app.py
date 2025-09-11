@@ -6,6 +6,7 @@ Siguiendo principios SOLID y Clean Architecture.
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 
 # Use absolute imports when running as main module
 try:
@@ -73,6 +74,32 @@ app.include_router(health.router, tags=["Health"])
 app.include_router(chat.router, tags=["Chat"])
 app.include_router(documents.router, tags=["Documents"])
 app.include_router(cache.router, tags=["Cache"])
+
+
+@app.get("/", response_class=HTMLResponse, tags=["UI"])
+async def serve_chatbot():
+    """Serve the Flowise chatbot interface"""
+    html_content = """
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Insurance Knowledge Base - Chatbot</title>
+    </head>
+    <body>
+        <h1>Insurance Knowledge Base Chatbot</h1>
+        <script type="module">
+            import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js"
+            Chatbot.init({
+                chatflowid: "b8da04ee-edd9-4158-8deb-5741e47eea4a",
+                apiHost: "https://flowise.oscgre.com",
+            })
+        </script>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
 
 
 if __name__ == "__main__":
