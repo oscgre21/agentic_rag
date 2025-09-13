@@ -58,9 +58,9 @@ COPY --chown=appuser:appuser routers/ ./routers/
 COPY --chown=appuser:appuser utils/ ./utils/
 COPY --chown=appuser:appuser core/ ./core/
 
-# Copy dist directory for Flowise chatbot (create if doesn't exist locally)
+# Create empty dist directory for Flowise chatbot
+# Files can be mounted as volume or added later
 RUN mkdir -p dist && chown -R appuser:appuser dist
-COPY --chown=appuser:appuser dist/ ./dist/ 2>/dev/null || true
 
 # Create docs directory for PDFs
 RUN mkdir -p docs && chown -R appuser:appuser docs
