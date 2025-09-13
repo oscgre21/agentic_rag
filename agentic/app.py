@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 # Use absolute imports when running as main module
@@ -76,6 +77,12 @@ app.include_router(chat.router, tags=["Chat"])
 app.include_router(documents.router, tags=["Documents"])
 app.include_router(cache.router, tags=["Cache"])
 
+# Montar la carpeta dist para servir archivos estáticos del chatbot
+dist_path = Path(__file__).parent / "dist"
+if dist_path.exists():
+    app.mount("/dist", StaticFiles(directory=str(dist_path)), name="dist")
+    logger.info(f"📁 Carpeta dist montada en /dist")
+
 
 
 @app.get("/docs-files/", tags=["Files"])
@@ -139,7 +146,7 @@ async def serve_chatbot():
     <body>
         <h1>Insurance Knowledge Base Chatbot</h1>
         <script type="module">
-            import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js"
+            import Chatbot from "/dist/web.js"
             Chatbot.init({
                 chatflowid: "b8da04ee-edd9-4158-8deb-5741e47eea4a",
                 apiHost: "https://flowise.oscgre.com",
