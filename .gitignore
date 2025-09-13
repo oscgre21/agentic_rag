@@ -9,7 +9,7 @@ venv/
 .env
 _pycache__/
 .claude/
-docs/
+#docs/
 neo4j_db/
 chroma_db/
 __pycache__

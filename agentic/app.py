@@ -6,7 +6,8 @@ Siguiendo principios SOLID y Clean Architecture.
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
+from pathlib import Path
 
 # Use absolute imports when running as main module
 try:
@@ -74,6 +75,48 @@ app.include_router(health.router, tags=["Health"])
 app.include_router(chat.router, tags=["Chat"])
 app.include_router(documents.router, tags=["Documents"])
 app.include_router(cache.router, tags=["Cache"])
+
+
+
+@app.get("/docs-files/", tags=["Files"])
+async def list_docs_files():
+    """Listar todos los archivos PDF en la carpeta docs"""
+    docs_path = Path(__file__).parent / "docs"
+    if not docs_path.exists():
+        return {"error": "La carpeta docs no existe"}
+    
+    pdf_files = []
+    for file in docs_path.glob("*.pdf"):
+        pdf_files.append({
+            "name": file.name,
+            "size": file.stat().st_size,
+            "url": f"/docs-files/{file.name}"
+        })
+    
+    return {
+        "total": len(pdf_files),
+        "files": pdf_files
+    }
+
+
+@app.get("/docs-files/{filename}", tags=["Files"])
+async def get_pdf_file(filename: str):
+    """Descargar un archivo PDF específico de la carpeta docs"""
+    file_path = Path(__file__).parent / "docs" / filename
+    
+    if not file_path.exists():
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+    
+    if not file_path.suffix.lower() == ".pdf":
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Solo se permiten archivos PDF")
+    
+    return FileResponse(
+        path=str(file_path),
+        media_type="application/pdf",
+        filename=filename
+    )
 
 
 @app.get("/chatbot", response_class=HTMLResponse, tags=["UI"])
