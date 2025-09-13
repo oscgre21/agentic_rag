@@ -118,10 +118,9 @@ async def get_pdf_file(filename: str):
     
     return Response(
         content=blob_data,
-        media_type="application/octet-stream",
+        media_type="application/pdf",
         headers={
-            "Content-Disposition": f"attachment; filename={filename}",
-            "Content-Type": "application/pdf"
+            "Content-Disposition": f"inline; filename={filename}"
         }
     )
 
