@@ -101,21 +101,28 @@ async def list_docs_files():
 
 @app.get("/docs-files/{filename}", tags=["Files"])
 async def get_pdf_file(filename: str):
-    """Descargar un archivo PDF específico de la carpeta docs"""
+    """Descargar un archivo PDF específico de la carpeta docs como blob"""
+    from fastapi import HTTPException, Response
+    
     file_path = Path(__file__).parent / "docs" / filename
     
     if not file_path.exists():
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Archivo no encontrado")
     
     if not file_path.suffix.lower() == ".pdf":
-        from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="Solo se permiten archivos PDF")
     
-    return FileResponse(
-        path=str(file_path),
-        media_type="application/pdf",
-        filename=filename
+    # Leer el archivo como bytes (blob)
+    with open(file_path, "rb") as file:
+        blob_data = file.read()
+    
+    return Response(
+        content=blob_data,
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Type": "application/pdf"
+        }
     )
 
 
