@@ -148,7 +148,7 @@ async def serve_chatbot():
         <script type="module">
             import Chatbot from "/dist/web.js"
             Chatbot.init({
-                chatflowid: "b8da04ee-edd9-4158-8deb-5741e47eea4a",
+                chatflowid: "6d7a2d52-e6a0-4bce-8b17-a061f423842c",
                 apiHost: "https://flowise.oscgre.com",
                 title: "BMI Insurance Knowledge Base",
                 showTitle: true,
