@@ -105,8 +105,8 @@ def main():
         print(f"Error: '{docs_dir}' is not a directory")
         return 1
     
-    # Find all PDF files
-    pdf_files = list(docs_dir.glob('*.pdf'))
+    # Find all PDF files (including subdirectories)
+    pdf_files = list(docs_dir.glob('**/*.pdf'))
     
     if not pdf_files:
         print(f"No PDF files found in '{docs_dir}'")
