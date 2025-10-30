@@ -57,7 +57,7 @@ COPY --chown=appuser:appuser services/ ./services/
 COPY --chown=appuser:appuser routers/ ./routers/
 COPY --chown=appuser:appuser utils/ ./utils/
 COPY --chown=appuser:appuser core/ ./core/
-COPY --chown=appuser:appuser docs/ /home/appuser/app/
+COPY --chown=appuser:appuser docs/ /home/appuser/app/docs/
 
 # Copy dist directory (for Flowise chatbot)
 COPY --chown=appuser:appuser dist ./dist/
